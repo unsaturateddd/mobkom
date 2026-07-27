@@ -1,5 +1,6 @@
 # MobKom Robot v2.0 — Telegram Bot
 
+import asyncio
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application, CommandHandler, CallbackQueryHandler,
