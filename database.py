@@ -37,7 +37,10 @@ def init_db():
             trader_id INTEGER PRIMARY KEY,
             receive_signals INTEGER DEFAULT 0,
             distribute_signals INTEGER DEFAULT 0,
-            auto_buy_enabled INTEGER DEFAULT 0
+            auto_buy_enabled INTEGER DEFAULT 0,
+            card TEXT DEFAULT '',
+            amount INTEGER DEFAULT 0,
+            cooldown INTEGER DEFAULT 30
         );
 
         CREATE TABLE IF NOT EXISTS purchases (
@@ -87,6 +90,21 @@ def init_db():
             timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     """)
+    
+    # Add missing columns for existing databases
+    try:
+        conn.execute("SELECT card FROM trader_settings LIMIT 1")
+    except:
+        conn.execute("ALTER TABLE trader_settings ADD COLUMN card TEXT DEFAULT ''")
+    try:
+        conn.execute("SELECT amount FROM trader_settings LIMIT 1")
+    except:
+        conn.execute("ALTER TABLE trader_settings ADD COLUMN amount INTEGER DEFAULT 0")
+    try:
+        conn.execute("SELECT cooldown FROM trader_settings LIMIT 1")
+    except:
+        conn.execute("ALTER TABLE trader_settings ADD COLUMN cooldown INTEGER DEFAULT 30")
+    
     conn.commit()
     conn.close()
 

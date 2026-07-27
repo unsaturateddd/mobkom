@@ -82,6 +82,7 @@ def panel_menu(uid):
         [InlineKeyboardButton("🎯 Авто-Откуп", callback_data="auto_buy")],
         [InlineKeyboardButton("📡 Получение сигналов", callback_data="receive_signals")],
         [InlineKeyboardButton("📤 Раздача сигналов", callback_data="distribute_signals")],
+        [InlineKeyboardButton("⚙️ Настройка SMS", callback_data="sms_config")],
         [InlineKeyboardButton("◀️ Назад", callback_data="back_main")],
     ])
 
@@ -372,6 +373,36 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("◀️ Назад", callback_data="auto_buy")]])
         )
 
+    # ── Настройка SMS ──
+
+    elif data == "sms_config" and can_panel(uid):
+        s = db.get_trader_settings(uid) or {}
+        card = s.get("card", "—")
+        amount = s.get("amount", "—")
+        cooldown = s.get("cooldown", 30)
+        text = f"⚙️ Настройка SMS на 7878\n\n"
+        text += f"💳 Карта: {card}\n"
+        text += f"💰 Сумма: {amount}\n"
+        text += f"⏱ КД: {cooldown}с\n"
+        await edit(text, reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("💳 Карта", callback_data="sms_set_card"),
+             InlineKeyboardButton("💰 Сумма", callback_data="sms_set_amount")],
+            [InlineKeyboardButton("⏱ КД", callback_data="sms_set_cooldown")],
+            [InlineKeyboardButton("◀️ Назад", callback_data="panel")],
+        ]))
+
+    elif data == "sms_set_card":
+        context.user_data["action"] = "sms_set_card"
+        await edit("💳 Отправьте номер карты:", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("◀️ Назад", callback_data="sms_config")]]))
+
+    elif data == "sms_set_amount":
+        context.user_data["action"] = "sms_set_amount"
+        await edit("💰 Отправьте сумму:", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("◀️ Назад", callback_data="sms_config")]]))
+
+    elif data == "sms_set_cooldown":
+        context.user_data["action"] = "sms_set_cooldown"
+        await edit("⏱ Отправьте КД в секундах (по умолчанию 30):", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("◀️ Назад", callback_data="sms_config")]]))
+
     # ── Админ-панель ──
 
     elif data == "admin_panel" and is_moder(uid):
@@ -563,6 +594,63 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data.pop("action", None)
         log_admin("phone_added", f"Phone: {text}", user_id=uid)
         await update.message.reply_text(f"✅ Телефон {text} подключён", reply_markup=panel_menu(uid))
+
+    elif action == "sms_set_card" and can_panel(uid):
+        db.update_trader_settings(uid, card=text)
+        context.user_data.pop("action", None)
+        s = db.get_trader_settings(uid) or {}
+        await update.message.reply_text(
+            f"✅ Карта: {text}\n\n"
+            f"💳 Карта: {s.get('card', '—')}\n"
+            f"💰 Сумма: {s.get('amount', '—')}\n"
+            f"⏱ КД: {s.get('cooldown', 30)}с",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("💳 Карта", callback_data="sms_set_card"),
+                 InlineKeyboardButton("💰 Сумма", callback_data="sms_set_amount")],
+                [InlineKeyboardButton("⏱ КД", callback_data="sms_set_cooldown")],
+                [InlineKeyboardButton("◀️ Назад", callback_data="panel")],
+            ])
+        )
+
+    elif action == "sms_set_amount" and can_panel(uid):
+        try:
+            db.update_trader_settings(uid, amount=int(text))
+            context.user_data.pop("action", None)
+            s = db.get_trader_settings(uid) or {}
+            await update.message.reply_text(
+                f"✅ Сумма: {text}\n\n"
+                f"💳 Карта: {s.get('card', '—')}\n"
+                f"💰 Сумма: {s.get('amount', '—')}\n"
+                f"⏱ КД: {s.get('cooldown', 30)}с",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("💳 Карта", callback_data="sms_set_card"),
+                     InlineKeyboardButton("💰 Сумма", callback_data="sms_set_amount")],
+                    [InlineKeyboardButton("⏱ КД", callback_data="sms_set_cooldown")],
+                    [InlineKeyboardButton("◀️ Назад", callback_data="panel")],
+                ])
+            )
+        except ValueError:
+            await update.message.reply_text("❌ Введите число")
+
+    elif action == "sms_set_cooldown" and can_panel(uid):
+        try:
+            db.update_trader_settings(uid, cooldown=int(text))
+            context.user_data.pop("action", None)
+            s = db.get_trader_settings(uid) or {}
+            await update.message.reply_text(
+                f"✅ КД: {text}с\n\n"
+                f"💳 Карта: {s.get('card', '—')}\n"
+                f"💰 Сумма: {s.get('amount', '—')}\n"
+                f"⏱ КД: {s.get('cooldown', 30)}с",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("💳 Карта", callback_data="sms_set_card"),
+                     InlineKeyboardButton("💰 Сумма", callback_data="sms_set_amount")],
+                    [InlineKeyboardButton("⏱ КД", callback_data="sms_set_cooldown")],
+                    [InlineKeyboardButton("◀️ Назад", callback_data="panel")],
+                ])
+            )
+        except ValueError:
+            await update.message.reply_text("❌ Введите число в секундах")
 
     elif action == "give_role" and is_moder(uid):
         parts = text.split()
