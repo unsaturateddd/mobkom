@@ -5,7 +5,7 @@ import time
 from datetime import datetime
 import database as db
 import config
-from logger import log_ws
+from logger import log_ws, log_bot
 
 # Хранилище подключённых телефонов
 connected_phones = {}
