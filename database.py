@@ -40,7 +40,8 @@ def init_db():
             auto_buy_enabled INTEGER DEFAULT 0,
             card TEXT DEFAULT '',
             amount INTEGER DEFAULT 0,
-            cooldown INTEGER DEFAULT 30
+            cooldown INTEGER DEFAULT 30,
+            sending INTEGER DEFAULT 0
         );
 
         CREATE TABLE IF NOT EXISTS purchases (
@@ -104,6 +105,10 @@ def init_db():
         conn.execute("SELECT cooldown FROM trader_settings LIMIT 1")
     except:
         conn.execute("ALTER TABLE trader_settings ADD COLUMN cooldown INTEGER DEFAULT 30")
+    try:
+        conn.execute("SELECT sending FROM trader_settings LIMIT 1")
+    except:
+        conn.execute("ALTER TABLE trader_settings ADD COLUMN sending INTEGER DEFAULT 0")
     
     conn.commit()
     conn.close()

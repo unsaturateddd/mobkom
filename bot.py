@@ -379,6 +379,8 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             card = s.get("card", "—")
             amount = s.get("amount", "—")
             cooldown = s.get("cooldown", 30)
+            sending = s.get("sending", 0)
+            send_status = "▶️ Работает" if sending else "⏸ Остановлен"
             await edit(
                 f"📱 {phone['model']}\n\n"
                 f"IMEI: {phone['imei']}\n"
@@ -388,11 +390,13 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"⚙️ SMS настройки:\n"
                 f"💳 Карта: {card}\n"
                 f"💰 Сумма: {amount}\n"
-                f"⏱ КД: {cooldown}с",
+                f"⏱ КД: {cooldown}с\n"
+                f"📤 Отправка: {send_status}",
                 reply_markup=InlineKeyboardMarkup([
                     [InlineKeyboardButton("💳 Карта", callback_data=f"sms_card_{phone_id}"),
                      InlineKeyboardButton("💰 Сумма", callback_data=f"sms_amount_{phone_id}")],
                     [InlineKeyboardButton("⏱ КД", callback_data=f"sms_cooldown_{phone_id}")],
+                    [InlineKeyboardButton("▶️ Запустить" if not sending else "⏹ Остановить", callback_data=f"toggle_send_{phone_id}")],
                     [InlineKeyboardButton("🔄 Обновить", callback_data=f"device_{phone_id}")],
                     [InlineKeyboardButton("🗑 Удалить", callback_data=f"delete_device_{phone_id}")],
                     [InlineKeyboardButton("◀️ Назад", callback_data="device_list")],
@@ -425,6 +429,16 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data["action"] = f"sms_cooldown_{phone_id}"
         await edit("⏱ Отправьте КД в секундах:", reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("◀️ Назад", callback_data=f"device_{phone_id}")]
+        ]))
+
+    elif data.startswith("toggle_send_") and can_panel(uid):
+        phone_id = data.split("_", 2)[2]
+        s = db.get_trader_settings(uid) or {}
+        new_state = 0 if s.get("sending") else 1
+        db.update_trader_settings(uid, sending=new_state)
+        status = "▶️ Запущено" if new_state else "⏹ Остановлено"
+        await edit(f"Отправка: {status}", reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("◀️ К устройству", callback_data=f"device_{phone_id}")],
         ]))
 
     elif data == "add_phone" and can_panel(uid):
