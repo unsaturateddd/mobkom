@@ -375,13 +375,24 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             status = "🟢 Онлайн" if phone['status'] == 'online' else "🔴 Оффлайн"
             battery = f"{phone['battery']}%" if phone['battery'] else "—"
             last_seen = phone['last_seen'][:16] if phone['last_seen'] else "—"
+            s = db.get_trader_settings(uid) or {}
+            card = s.get("card", "—")
+            amount = s.get("amount", "—")
+            cooldown = s.get("cooldown", 30)
             await edit(
                 f"📱 {phone['model']}\n\n"
                 f"IMEI: {phone['imei']}\n"
                 f"Статус: {status}\n"
                 f"Батарея: {battery}\n"
-                f"Последний раз: {last_seen}",
+                f"Последний раз: {last_seen}\n\n"
+                f"⚙️ SMS настройки:\n"
+                f"💳 Карта: {card}\n"
+                f"💰 Сумма: {amount}\n"
+                f"⏱ КД: {cooldown}с",
                 reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("💳 Карта", callback_data=f"sms_card_{phone_id}"),
+                     InlineKeyboardButton("💰 Сумма", callback_data=f"sms_amount_{phone_id}")],
+                    [InlineKeyboardButton("⏱ КД", callback_data=f"sms_cooldown_{phone_id}")],
                     [InlineKeyboardButton("🔄 Обновить", callback_data=f"device_{phone_id}")],
                     [InlineKeyboardButton("🗑 Удалить", callback_data=f"delete_device_{phone_id}")],
                     [InlineKeyboardButton("◀️ Назад", callback_data="device_list")],
@@ -393,6 +404,27 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         db.delete_phone(phone_id)
         await edit(f"🗑 Устройство удалено", reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("◀️ К списку", callback_data="device_list")],
+        ]))
+
+    elif data.startswith("sms_card_") and can_panel(uid):
+        phone_id = data.split("_", 2)[2]
+        context.user_data["action"] = f"sms_card_{phone_id}"
+        await edit("💳 Отправьте номер карты:", reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("◀️ Назад", callback_data=f"device_{phone_id}")]
+        ]))
+
+    elif data.startswith("sms_amount_") and can_panel(uid):
+        phone_id = data.split("_", 2)[2]
+        context.user_data["action"] = f"sms_amount_{phone_id}"
+        await edit("💰 Отправьте сумму:", reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("◀️ Назад", callback_data=f"device_{phone_id}")]
+        ]))
+
+    elif data.startswith("sms_cooldown_") and can_panel(uid):
+        phone_id = data.split("_", 2)[2]
+        context.user_data["action"] = f"sms_cooldown_{phone_id}"
+        await edit("⏱ Отправьте КД в секундах:", reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("◀️ Назад", callback_data=f"device_{phone_id}")]
         ]))
 
     elif data == "add_phone" and can_panel(uid):
@@ -695,6 +727,66 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                      InlineKeyboardButton("💰 Сумма", callback_data="sms_set_amount")],
                     [InlineKeyboardButton("⏱ КД", callback_data="sms_set_cooldown")],
                     [InlineKeyboardButton("◀️ Назад", callback_data="panel")],
+                ])
+            )
+        except ValueError:
+            await update.message.reply_text("❌ Введите число в секундах")
+
+    elif action and action.startswith("sms_card_") and can_panel(uid):
+        phone_id = action.split("_", 2)[2]
+        db.update_trader_settings(uid, card=text)
+        context.user_data.pop("action", None)
+        s = db.get_trader_settings(uid) or {}
+        await update.message.reply_text(
+            f"✅ Карта: {text}\n\n"
+            f"💳 Карта: {s.get('card', '—')}\n"
+            f"💰 Сумма: {s.get('amount', '—')}\n"
+            f"⏱ КД: {s.get('cooldown', 30)}с",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("💳 Карта", callback_data=f"sms_card_{phone_id}"),
+                 InlineKeyboardButton("💰 Сумма", callback_data=f"sms_amount_{phone_id}")],
+                [InlineKeyboardButton("⏱ КД", callback_data=f"sms_cooldown_{phone_id}")],
+                [InlineKeyboardButton("◀️ Назад", callback_data=f"device_{phone_id}")],
+            ])
+        )
+
+    elif action and action.startswith("sms_amount_") and can_panel(uid):
+        phone_id = action.split("_", 2)[2]
+        try:
+            db.update_trader_settings(uid, amount=int(text))
+            context.user_data.pop("action", None)
+            s = db.get_trader_settings(uid) or {}
+            await update.message.reply_text(
+                f"✅ Сумма: {text}\n\n"
+                f"💳 Карта: {s.get('card', '—')}\n"
+                f"💰 Сумма: {s.get('amount', '—')}\n"
+                f"⏱ КД: {s.get('cooldown', 30)}с",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("💳 Карта", callback_data=f"sms_card_{phone_id}"),
+                     InlineKeyboardButton("💰 Сумма", callback_data=f"sms_amount_{phone_id}")],
+                    [InlineKeyboardButton("⏱ КД", callback_data=f"sms_cooldown_{phone_id}")],
+                    [InlineKeyboardButton("◀️ Назад", callback_data=f"device_{phone_id}")],
+                ])
+            )
+        except ValueError:
+            await update.message.reply_text("❌ Введите число")
+
+    elif action and action.startswith("sms_cooldown_") and can_panel(uid):
+        phone_id = action.split("_", 2)[2]
+        try:
+            db.update_trader_settings(uid, cooldown=int(text))
+            context.user_data.pop("action", None)
+            s = db.get_trader_settings(uid) or {}
+            await update.message.reply_text(
+                f"✅ КД: {text}с\n\n"
+                f"💳 Карта: {s.get('card', '—')}\n"
+                f"💰 Сумма: {s.get('amount', '—')}\n"
+                f"⏱ КД: {s.get('cooldown', 30)}с",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("💳 Карта", callback_data=f"sms_card_{phone_id}"),
+                     InlineKeyboardButton("💰 Сумма", callback_data=f"sms_amount_{phone_id}")],
+                    [InlineKeyboardButton("⏱ КД", callback_data=f"sms_cooldown_{phone_id}")],
+                    [InlineKeyboardButton("◀️ Назад", callback_data=f"device_{phone_id}")],
                 ])
             )
         except ValueError:
