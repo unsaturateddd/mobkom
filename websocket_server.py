@@ -203,10 +203,12 @@ async def start_ws_server():
     print(f"  🚀 [WS] WebSocket сервер запущен на {config.WS_HOST}:{config.WS_PORT}")
     
     # Обработка HEAD запросов от Render health check
-    async def process_request(path, headers):
-        if headers.get("Upgrade") != "websocket":
-            # Это HTTP запрос (health check), отвечаем 200
-            return 200, [(b"Content-Type", b"text/plain")], b"OK"
+    async def process_request(path, request_headers):
+        # Если это не WebSocket запрос, отвечаем 200 OK
+        if "Upgrade" not in request_headers or request_headers["Upgrade"].lower() != "websocket":
+            return 200, {}, b"OK"
+        # Продолжаем с WebSocket handshake
+        return None
     
     async with websockets.serve(
         handler, 
