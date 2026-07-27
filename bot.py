@@ -81,7 +81,7 @@ def panel_menu(uid):
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("🎯 Авто-Откуп", callback_data="auto_buy")],
         [InlineKeyboardButton("📡 Сигналы", callback_data="distribute_signals")],
-        [InlineKeyboardButton("⚙️ Настройка SMS", callback_data="sms_config")],
+        [InlineKeyboardButton("📥 Получение сигналов", callback_data="receive_signals")],
         [InlineKeyboardButton("◀️ Назад", callback_data="back_main")],
     ])
 
