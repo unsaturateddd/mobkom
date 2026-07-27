@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MobKom Robot - Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0f0f23; color: #e0e0e0; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid #2a2a4a; margin-bottom: 30px; }
+        .header h1 { font-size: 1.8em; background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .card { background: #1a1a2e; border-radius: 12px; padding: 24px; margin-bottom: 20px; border: 1px solid #2a2a4a; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .stat-card { background: linear-gradient(135deg, #1a1a2e, #16213e); border-radius: 12px; padding: 20px; text-align: center; border: 1px solid #2a2a4a; }
+        .stat-card .number { font-size: 2.2em; font-weight: bold; background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat-card .label { color: #888; margin-top: 5px; font-size: 0.9em; }
+        .nav { display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
+        .nav a { color: #667eea; text-decoration: none; padding: 8px 16px; border-radius: 8px; background: #1a1a2e; border: 1px solid #2a2a4a; transition: all 0.3s; }
+        .nav a:hover { background: #2a2a4a; }
+        .nav a.active { background: #667eea; color: white; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #2a2a4a; }
+        th { background: #16213e; color: #667eea; font-weight: 600; }
+        tr:hover { background: #1a1a2e; }
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.85em; }
+        .badge-admin { background: #9b59b6; color: white; }
+        .badge-mod { background: #3498db; color: white; }
+        .badge-trader { background: #2ecc71; color: white; }
+        .log-entry { padding: 10px; border-left: 3px solid #667eea; margin-bottom: 8px; background: #16213e; border-radius: 0 8px 8px 0; font-size: 0.9em; }
+        .log-entry .time { color: #667eea; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Dashboard</h1>
+            <a href="/logout" style="color: #e74c3c;">Выйти</a>
+        </div>
+
+        <div class="nav">
+            <a href="/dashboard" class="active">📊 Dashboard</a>
+            <a href="/users">👥 Пользователи</a>
+            <a href="/phones">📱 Телефоны</a>
+            <a href="/purchases">🎯 Откупы</a>
+            <a href="/signals">📡 Сигналы</a>
+            <a href="/logs">📋 Логи</a>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="number">{{ stats.total_users }}</div>
+                <div class="label">Пользователей</div>
+            </div>
+            <div class="stat-card">
+                <div class="number">{{ stats.trader_count }}</div>
+                <div class="label">Трейдеров</div>
+            </div>
+            <div class="stat-card">
+                <div class="number">{{ stats.phones_online }}/{{ stats.phones_total }}</div>
+                <div class="label">Телефонов онлайн</div>
+            </div>
+            <div class="stat-card">
+                <div class="number">{{ stats.admin_count + stats.mod_count }}</div>
+                <div class="label">Админы/Модеры</div>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="card">
+                <h3 class="section-title">👥 Последние пользователи</h3>
+                <table>
+                    <tr><th>ID</th><th>Username</th><th>Роль</th></tr>
+                    {% for u in users %}
+                    <tr>
+                        <td>{{ u.user_id }}</td>
+                        <td>@{{ u.username }}</td>
+                        <td><span class="badge badge-{{ u.role }}">{{ u.role }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+
+            <div class="card">
+                <h3 class="section-title">📋 Последние логи</h3>
+                {% for l in logs %}
+                <div class="log-entry">
+                    <span class="time">{{ l.timestamp[-8:] }}</span>
+                    {{ l.action }}: {{ l.details[:40] }}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</body>
+</html>

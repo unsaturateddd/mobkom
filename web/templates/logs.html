@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MobKom Robot - Логи</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0f0f23; color: #e0e0e0; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid #2a2a4a; margin-bottom: 30px; }
+        .header h1 { font-size: 1.8em; background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .card { background: #1a1a2e; border-radius: 12px; padding: 24px; margin-bottom: 20px; border: 1px solid #2a2a4a; }
+        .nav { display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
+        .nav a { color: #667eea; text-decoration: none; padding: 8px 16px; border-radius: 8px; background: #1a1a2e; border: 1px solid #2a2a4a; transition: all 0.3s; }
+        .nav a:hover { background: #2a2a4a; }
+        .nav a.active { background: #667eea; color: white; }
+        .log-entry { padding: 12px; margin-bottom: 8px; background: #16213e; border-radius: 8px; border-left: 3px solid #667eea; }
+        .log-entry.error { border-left-color: #e74c3c; }
+        .log-entry .time { color: #667eea; font-weight: 600; }
+        .log-entry .action { color: #2ecc71; }
+        .log-entry .details { color: #888; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 Логи</h1>
+            <a href="/logout" style="color: #e74c3c;">Выйти</a>
+        </div>
+
+        <div class="nav">
+            <a href="/dashboard">📊 Dashboard</a>
+            <a href="/users">👥 Пользователи</a>
+            <a href="/phones">📱 Телефоны</a>
+            <a href="/purchases">🎯 Откупы</a>
+            <a href="/signals">📡 Сигналы</a>
+            <a href="/logs" class="active">📋 Логи</a>
+        </div>
+
+        <div class="card">
+            <h3 style="margin-bottom: 15px;">Последние события ({{ logs|length }})</h3>
+            {% for l in logs %}
+            <div class="log-entry {% if l.action == 'error' %}error{% endif %}">
+                <span class="time">{{ l.timestamp }}</span>
+                <span class="action">{{ l.action }}</span>
+                <div class="details">{{ l.details }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

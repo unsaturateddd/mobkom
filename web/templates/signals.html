@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MobKom Robot - Сигналы</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0f0f23; color: #e0e0e0; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid #2a2a4a; margin-bottom: 30px; }
+        .header h1 { font-size: 1.8em; background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .card { background: #1a1a2e; border-radius: 12px; padding: 24px; margin-bottom: 20px; border: 1px solid #2a2a4a; }
+        .nav { display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
+        .nav a { color: #667eea; text-decoration: none; padding: 8px 16px; border-radius: 8px; background: #1a1a2e; border: 1px solid #2a2a4a; transition: all 0.3s; }
+        .nav a:hover { background: #2a2a4a; }
+        .nav a.active { background: #667eea; color: white; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #2a2a4a; }
+        th { background: #16213e; color: #667eea; font-weight: 600; }
+        tr:hover { background: #1a1a2e; }
+        .signal-success { color: #2ecc71; }
+        .signal-error { color: #e74c3c; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📡 Сигналы</h1>
+            <a href="/logout" style="color: #e74c3c;">Выйти</a>
+        </div>
+
+        <div class="nav">
+            <a href="/dashboard">📊 Dashboard</a>
+            <a href="/users">👥 Пользователи</a>
+            <a href="/phones">📱 Телефоны</a>
+            <a href="/purchases">🎯 Откупы</a>
+            <a href="/signals" class="active">📡 Сигналы</a>
+            <a href="/logs">📋 Логи</a>
+        </div>
+
+        <div class="card">
+            <h3 style="margin-bottom: 15px;">Последние сигналы ({{ signals|length }})</h3>
+            <table>
+                <tr>
+                    <th>ID</th>
+                    <th>Телефон</th>
+                    <th>Содержание</th>
+                    <th>Время</th>
+                </tr>
+                {% for s in signals %}
+                <tr>
+                    <td>#{{ s.id }}</td>
+                    <td>{{ s.phone_id }}</td>
+                    <td class="{% if 'Перевод в Таджикистан' in s.body %}signal-success{% elif 'Оплата не произведена' in s.body %}signal-error{% endif %}">
+                        {{ s.body[:80] }}
+                    </td>
+                    <td>{{ s.timestamp[:16] }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+</body>
+</html>
