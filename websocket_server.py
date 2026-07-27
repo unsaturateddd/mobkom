@@ -202,27 +202,8 @@ def get_health_status():
 async def start_ws_server():
     print(f"  🚀 [WS] WebSocket сервер запущен на {config.WS_HOST}:{config.WS_PORT}")
     
-    # Обработка HEAD запросов от Render health check
-    async def process_request(path, request_headers):
-        # Если это не WebSocket запрос, отвечаем 200 OK
-        if "Upgrade" not in request_headers or request_headers["Upgrade"].lower() != "websocket":
-            return 200, {}, b"OK"
-        # Продолжаем с WebSocket handshake
-        return None
-    
-    try:
-        async with websockets.serve(
-            handler, 
-            config.WS_HOST, 
-            config.WS_PORT,
-            process_request=process_request
-        ):
-            await asyncio.Future()
-    except Exception as e:
-        print(f"  ❌ [WS] Ошибка: {e}")
-        # Fallback без process_request
-        async with websockets.serve(handler, config.WS_HOST, config.WS_PORT):
-            await asyncio.Future()
+    async with websockets.serve(handler, config.WS_HOST, config.WS_PORT):
+        await asyncio.Future()
 
 
 if __name__ == "__main__":

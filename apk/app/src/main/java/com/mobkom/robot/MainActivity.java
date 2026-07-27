@@ -36,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
             startActivityForResult(intent, 101);
         });
 
-        updateStatus("Нажмите для сканирования QR");
+        updateStatus("MobKom Robot v1.1\nНажмите для сканирования QR");
     }
 
     private void checkPermissions() {
