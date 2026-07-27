@@ -1,0 +1,8 @@
+python-telegram-bot>=20.0
+aiosqlite>=0.18.0
+websockets>=12.0
+qrcode[pil]
+fastapi
+uvicorn
+jinja2
+python-multipart
