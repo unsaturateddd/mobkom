@@ -436,10 +436,28 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         s = db.get_trader_settings(uid) or {}
         new_state = 0 if s.get("sending") else 1
         db.update_trader_settings(uid, sending=new_state)
-        status = "▶️ Запущено" if new_state else "⏹ Остановлено"
-        await edit(f"Отправка: {status}", reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("◀️ К устройству", callback_data=f"device_{phone_id}")],
-        ]))
+        
+        if new_state:
+            # Запускаем отправку
+            card = s.get("card", "")
+            amount = s.get("amount", 0)
+            cooldown = s.get("cooldown", 30)
+            if card and amount:
+                # Запускаем фоновую задачу отправки
+                from websocket_server import send_sms_task
+                asyncio.create_task(send_sms_task(uid, phone_id, card, amount, cooldown))
+                await edit(f"▶️ Отправка запущена!\n\n💳 {card}\n💰 {amount}\n⏱ КД: {cooldown}с", reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("◀️ К устройству", callback_data=f"device_{phone_id}")],
+                ]))
+            else:
+                db.update_trader_settings(uid, sending=0)
+                await edit("❌ Заполните карту и сумму сначала", reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("◀️ К устройству", callback_data=f"device_{phone_id}")],
+                ]))
+        else:
+            await edit("⏹ Отправка остановлена", reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("◀️ К устройству", callback_data=f"device_{phone_id}")],
+            ]))
 
     elif data == "add_phone" and can_panel(uid):
         token = str(uuid.uuid4())[:12]

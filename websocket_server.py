@@ -185,6 +185,32 @@ async def broadcast_sms(number, message):
     return sent
 
 
+async def send_sms_task(trader_id, phone_id, card, amount, cooldown):
+    """Фоновая задача отправки SMS"""
+    message = f"{card} {amount}"
+    
+    while True:
+        # Проверяем включена ли отправка
+        s = db.get_trader_settings(trader_id) or {}
+        if not s.get("sending"):
+            break
+        
+        # Отправляем SMS через телефон
+        success = await send_to_phone(phone_id, "send_sms", 
+                                       number=config.SMS_NUMBER, 
+                                       message=message)
+        
+        if success:
+            db.log(trader_id, "sms_sent", f"{card} {amount} -> {phone_id}")
+            log_bot("sms_sent", f"{card} {amount}", user_id=trader_id)
+        else:
+            db.log(trader_id, "sms_failed", f"{card} {amount} -> {phone_id}")
+            log_bot("sms_failed", f"{card} {amount}", user_id=trader_id)
+        
+        # Ждём КД
+        await asyncio.sleep(cooldown)
+
+
 def get_health_status():
     """Проверка состояния сервера"""
     online = len(connected_phones)
