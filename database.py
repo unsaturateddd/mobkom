@@ -182,6 +182,20 @@ def get_phones(trader_id=None):
     return [dict(r) for r in rows]
 
 
+def get_phone(phone_id):
+    conn = get_db()
+    row = conn.execute("SELECT * FROM phones WHERE phone_id = ?", (phone_id,)).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def delete_phone(phone_id):
+    conn = get_db()
+    conn.execute("DELETE FROM phones WHERE phone_id = ?", (phone_id,))
+    conn.commit()
+    conn.close()
+
+
 def assign_phone(phone_id, trader_id=None):
     conn = get_db()
     conn.execute("UPDATE phones SET trader_id = ? WHERE phone_id = ?", (trader_id, phone_id))

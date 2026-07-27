@@ -80,8 +80,7 @@ def main_menu(uid):
 def panel_menu(uid):
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("🎯 Авто-Откуп", callback_data="auto_buy")],
-        [InlineKeyboardButton("📡 Получение сигналов", callback_data="receive_signals")],
-        [InlineKeyboardButton("📤 Раздача сигналов", callback_data="distribute_signals")],
+        [InlineKeyboardButton("📡 Сигналы", callback_data="distribute_signals")],
         [InlineKeyboardButton("⚙️ Настройка SMS", callback_data="sms_config")],
         [InlineKeyboardButton("◀️ Назад", callback_data="back_main")],
     ])
@@ -333,18 +332,67 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         status = "включено" if new else "выключено"
         await edit(f"📡 Получение сигналов: {status}", reply_markup=panel_menu(uid))
 
-    # ── Раздача сигналов ──
+    # ── Сигналы ──
 
     elif data == "distribute_signals" and can_panel(uid):
         phones = db.get_phones(trader_id=uid)
+        online = len([p for p in phones if p['status'] == 'online'])
+        await edit(
+            f"📡 Сигналы\n\n"
+            f"📱 Устройств: {len(phones)} (онлайн: {online})",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("📋 Список устройств", callback_data="device_list")],
+                [InlineKeyboardButton("➕ Подключить устройство", callback_data="add_phone")],
+                [InlineKeyboardButton("◀️ Назад", callback_data="panel")],
+            ])
+        )
+
+    elif data == "device_list" and can_panel(uid):
+        phones = db.get_phones(trader_id=uid)
         if phones:
-            lines = [f"{'🟢' if p['status']=='online' else '🔴'} {p['model']} ({p['imei'][:8]}...)" for p in phones]
-            text = "📤 Раздача сигналов\n\nТелефоны:\n" + "\n".join(lines)
+            buttons = []
+            for p in phones:
+                status_icon = "🟢" if p['status'] == 'online' else "🔴"
+                buttons.append([InlineKeyboardButton(
+                    f"{status_icon} {p['model']} ({p['imei'][-6:]})",
+                    callback_data=f"device_{p['phone_id']}"
+                )])
+            buttons.append([InlineKeyboardButton("◀️ Назад", callback_data="distribute_signals")])
+            await edit("📋 Ваши устройства:", reply_markup=InlineKeyboardMarkup(buttons))
         else:
-            text = "📤 Раздача сигналов\n\nТелефонов нет"
-        await edit(text, reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("➕ Подключить телефон", callback_data="add_phone")],
-            [InlineKeyboardButton("◀️ Назад", callback_data="panel")],
+            await edit(
+                "📋 Устройств нет\n\nПодключите первое устройство",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("➕ Подключить", callback_data="add_phone")],
+                    [InlineKeyboardButton("◀️ Назад", callback_data="distribute_signals")],
+                ])
+            )
+
+    elif data.startswith("device_") and can_panel(uid):
+        phone_id = data.split("_", 1)[1]
+        phone = db.get_phone(phone_id)
+        if phone:
+            status = "🟢 Онлайн" if phone['status'] == 'online' else "🔴 Оффлайн"
+            battery = f"{phone['battery']}%" if phone['battery'] else "—"
+            last_seen = phone['last_seen'][:16] if phone['last_seen'] else "—"
+            await edit(
+                f"📱 {phone['model']}\n\n"
+                f"IMEI: {phone['imei']}\n"
+                f"Статус: {status}\n"
+                f"Батарея: {battery}\n"
+                f"Последний раз: {last_seen}",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("🔄 Обновить", callback_data=f"device_{phone_id}")],
+                    [InlineKeyboardButton("🗑 Удалить", callback_data=f"delete_device_{phone_id}")],
+                    [InlineKeyboardButton("◀️ Назад", callback_data="device_list")],
+                ])
+            )
+
+    elif data.startswith("delete_device_") and can_panel(uid):
+        phone_id = data.split("_", 2)[2]
+        db.delete_phone(phone_id)
+        await edit(f"🗑 Устройство удалено", reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("◀️ К списку", callback_data="device_list")],
         ]))
 
     elif data == "add_phone" and can_panel(uid):
