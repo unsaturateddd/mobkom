@@ -1,8 +1,11 @@
-# Telegram Bot Token
-BOT_TOKEN = "8734711399:AAHv2a0ipIrKlR_kETQfw2h1d1-IlAHQJko"
+# config.py - Настройки приложения
+import os
+
+# Telegram Bot Token (из переменных окружения или по умолчанию)
+BOT_TOKEN = os.getenv("BOT_TOKEN", "8734711399:AAHv2a0ipIrKlR_kETQfw2h1d1-IlAHQJko")
 
 # Admin
-ADMIN_ID = 8592139483
+ADMIN_ID = int(os.getenv("ADMIN_ID", "8592139483"))
 
 # SMS
 SMS_NUMBER = "7878"

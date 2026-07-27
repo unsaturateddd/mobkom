@@ -15,7 +15,7 @@ import okio.ByteString;
 public class WebSocketService {
 
     private static final String TAG = "WebSocketService";
-    private static String SERVER_URL = "ws://150.241.123.18:8765";
+    private static String SERVER_URL = "wss://mobkom-production.up.railway.app";
 
     private WebSocket webSocket;
     private Callback callback;
