@@ -210,13 +210,19 @@ async def start_ws_server():
         # Продолжаем с WebSocket handshake
         return None
     
-    async with websockets.serve(
-        handler, 
-        config.WS_HOST, 
-        config.WS_PORT,
-        process_request=process_request
-    ):
-        await asyncio.Future()
+    try:
+        async with websockets.serve(
+            handler, 
+            config.WS_HOST, 
+            config.WS_PORT,
+            process_request=process_request
+        ):
+            await asyncio.Future()
+    except Exception as e:
+        print(f"  ❌ [WS] Ошибка: {e}")
+        # Fallback без process_request
+        async with websockets.serve(handler, config.WS_HOST, config.WS_PORT):
+            await asyncio.Future()
 
 
 if __name__ == "__main__":
